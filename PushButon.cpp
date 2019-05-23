@@ -16,7 +16,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[PushBtn].......";
-#define _EXPR_	(_defdbg)
+#define _EXPR_	(_defdbg && !IS_ISR())
 
 
 
@@ -44,6 +44,7 @@ PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode,
     _id = id;
     _hold_us = 0;
     _hold_running = false;
+    _endis_gfilt = true;
     
     // Desactiva las callbacks de notificación
     DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
@@ -109,8 +110,6 @@ void PushButton::disableReleaseEvents(){
 }
 
 
-
- 
 //------------------------------------------------------------------------------------
 //-- PRIVATE METHODS IMPLEMENTATION --------------------------------------------------
 //------------------------------------------------------------------------------------
@@ -121,7 +120,12 @@ void PushButton::isrRiseCallback(){
 	_iin->rise(NULL);
 	_iin->fall(NULL);
 	_curr_value = 1;
-	_tick_filt->start(GlitchFilterTimeoutUs/1000);
+	if(_endis_gfilt){
+		_tick_filt->start(GlitchFilterTimeoutUs/1000);
+	}
+	else{
+		gpioFilterCallback();
+	}
 }
 
 
@@ -130,7 +134,12 @@ void PushButton::isrFallCallback(){
 	_iin->rise(NULL);
 	_iin->fall(NULL);
 	_curr_value = 0;
-	_tick_filt->start(GlitchFilterTimeoutUs/1000);
+	if(_endis_gfilt){
+		_tick_filt->start(GlitchFilterTimeoutUs/1000);
+	}
+	else{
+		gpioFilterCallback();
+	}
 }
 
 //------------------------------------------------------------------------------------
