@@ -43,7 +43,7 @@ class PushButton {
      *  @param millis Milisegundos tras los que se genera el evento periódico
      */
     void enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t millis);
-  
+
     
 	/** Instala callback para procesar los eventos de liberación. La callback
 	 *  se ejecutará en contexto de tarea
@@ -66,7 +66,19 @@ class PushButton {
      *  Desinstala callback para procesar los eventos de liberación
      */
     void disableReleaseEvents();
-         
+
+    /** Habilita el filtro anti-glitch
+     *
+     */
+    void enableGlitchFilter(){ _endis_gfilt = true; }
+
+
+    /** Desactiva el filtro anti-glitch
+     *
+     */
+    void disableGlitchFilter() { _endis_gfilt = false; }
+
+
   private:
 
     static const uint32_t GlitchFilterTimeoutUs = 20000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
@@ -82,6 +94,7 @@ class PushButton {
     uint32_t _id;                           /// Identificador del pulsador
     bool _defdbg;							/// Flag para activar las trazas de depuración por defecto
     uint8_t _curr_value;					/// Valor recien leído del InterruptIn
+    bool _endis_gfilt;						/// Flag de control del filtro anti-glitch
 
 	/** isrRiseCallback
      *  ISR para procesar eventos de cambio de nivel
