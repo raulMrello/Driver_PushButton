@@ -15,6 +15,10 @@
 #define __PushButton__H
 
 #include "mbed.h"
+#if __MBED__==1
+#include "mdf_api_cortex.h"
+#endif
+
 
    
 class PushButton {

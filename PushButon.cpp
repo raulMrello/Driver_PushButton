@@ -55,10 +55,18 @@ PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode,
 
     // Crea temporizadores
     DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando tickers de tarea");
+	#if __MBED__==1
+    _tick_filt = new RtosTimer(callback(this, &PushButton::gpioFilterCallback), osTimerOnce);
+    MBED_ASSERT(_tick_filt);
+    _tick_hold = new RtosTimer(callback(this, &PushButton::holdTickCallback), osTimerPeriodic);
+    MBED_ASSERT(_tick_hold);
+	#elif ESP_PLATFORM==1
     _tick_filt = new RtosTimer(callback(this, &PushButton::gpioFilterCallback), osTimerOnce, "BtnTmrFilt");
     MBED_ASSERT(_tick_filt);
     _tick_hold = new RtosTimer(callback(this, &PushButton::holdTickCallback), osTimerPeriodic, "BtnTmrHold");
     MBED_ASSERT(_tick_hold);
+	#endif
+
 }
 
 
