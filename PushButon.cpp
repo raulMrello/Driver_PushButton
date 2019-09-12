@@ -66,9 +66,21 @@ PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode,
     _tick_hold = new RtosTimer(callback(this, &PushButton::holdTickCallback), osTimerPeriodic, "BtnTmrHold");
     MBED_ASSERT(_tick_hold);
 	#endif
+    sprintf(_th_name,"pushb_%x", (uint32_t)this);
+    _th = new Thread(osPriorityNormal, OS_STACK_SIZE, NULL, _th_name);
+    MBED_ASSERT(_th);
+    _th->start(callback(this, &PushButton::_task));
 
 }
 
+
+//------------------------------------------------------------------------------------
+PushButton::~PushButton() {
+	delete(_tick_filt);
+	delete(_tick_hold);
+	delete(_iin);
+	delete(_th);
+}
 
 //------------------------------------------------------------------------------------
 void PushButton::enablePressEvents(Callback<void(uint32_t)>pressCb){
@@ -124,16 +136,40 @@ void PushButton::disableReleaseEvents(){
 
 
 //------------------------------------------------------------------------------------
+void PushButton::_task(){
+	for(;;){
+		osEvent oe = _th->signal_wait(osFlagsWaitAny, osWaitForever);
+
+		// Evalua rise
+		if(oe.status == osEventSignal &&  (oe.value.signals & EvRise) != 0){
+			_curr_value = 1;
+			if(_endis_gfilt){
+				_tick_filt->start(GlitchFilterTimeoutUs/1000);
+			}
+			else{
+				gpioFilterCallback();
+			}
+		}
+		// Evalua fall
+		if(oe.status == osEventSignal &&  (oe.value.signals & EvFall) != 0){
+			_curr_value = 0;
+			if(_endis_gfilt){
+				_tick_filt->start(GlitchFilterTimeoutUs/1000);
+			}
+			else{
+				gpioFilterCallback();
+			}
+		}
+	}
+}
+
+
+
+//------------------------------------------------------------------------------------
 void PushButton::isrRiseCallback(){
 	_iin->rise(NULL);
 	_iin->fall(NULL);
-	_curr_value = 1;
-	if(_endis_gfilt){
-		_tick_filt->start(GlitchFilterTimeoutUs/1000);
-	}
-	else{
-		gpioFilterCallback();
-	}
+	_th->signal_set(EvRise);
 }
 
 
@@ -141,13 +177,7 @@ void PushButton::isrRiseCallback(){
 void PushButton::isrFallCallback(){
 	_iin->rise(NULL);
 	_iin->fall(NULL);
-	_curr_value = 0;
-	if(_endis_gfilt){
-		_tick_filt->start(GlitchFilterTimeoutUs/1000);
-	}
-	else{
-		gpioFilterCallback();
-	}
+	_th->signal_set(EvFall);
 }
 
 //------------------------------------------------------------------------------------
