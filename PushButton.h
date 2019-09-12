@@ -85,6 +85,10 @@ class PushButton {
 
   private:
 
+    /** Eventos de teclado */
+    static const uint32_t EvRise 	= (1<<0);
+    static const uint32_t EvFall 	= (1<<1);
+
     static const uint32_t GlitchFilterTimeoutUs = 20000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
     InterruptIn* _iin;						/// InterruptIn asociada
     LogicLevel _level;                      /// Nivel lógico
@@ -99,6 +103,8 @@ class PushButton {
     bool _defdbg;							/// Flag para activar las trazas de depuración por defecto
     uint8_t _curr_value;					/// Valor recien leído del InterruptIn
     bool _endis_gfilt;						/// Flag de control del filtro anti-glitch
+    Thread* _th;							/// Controlador del hilo
+    char _th_name[24];
 
 	/** isrRiseCallback
      *  ISR para procesar eventos de cambio de nivel
@@ -124,6 +130,12 @@ class PushButton {
      *  Ajsuta las callbacks en función del nivel lógico actual
      */
     void enableRiseFallCallbacks();
+
+
+    /**
+     * Hilo de control
+     */
+    void _task();
   
 };
      
