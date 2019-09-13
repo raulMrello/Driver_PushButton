@@ -39,6 +39,7 @@ class PushButton {
      *  @param pressCb Callback a instalar
      */
     void enablePressEvents(Callback<void(uint32_t)>pressCb);
+    void enablePressEvents(Callback<void()>pressCb);
   
     
 	/** Instala callback para procesar los eventos de mantenimiento. La callback
@@ -47,6 +48,7 @@ class PushButton {
      *  @param millis Milisegundos tras los que se genera el evento periódico
      */
     void enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t millis);
+    void enableHoldEvents(Callback<void()>holdCb, uint32_t millis);
 
     
 	/** Instala callback para procesar los eventos de liberación. La callback
@@ -54,6 +56,7 @@ class PushButton {
      *  @param releaseCb Callback a instalar
      */
     void enableReleaseEvents(Callback<void(uint32_t)>releaseCb);
+    void enableReleaseEvents(Callback<void()>releaseCb);
   
   
 	/** disablePressEvents
@@ -93,8 +96,11 @@ class PushButton {
     InterruptIn* _iin;						/// InterruptIn asociada
     LogicLevel _level;                      /// Nivel lógico
     Callback<void(uint32_t)> _pressCb;      /// Callback para notificar eventos de pulsación
+    Callback<void()> 		 _pressCb2;     /// Callback para notificar eventos de pulsación
     Callback<void(uint32_t)> _holdCb;       /// Callback para notificar eventos de mantenimiento
+    Callback<void()> 		 _holdCb2;      /// Callback para notificar eventos de mantenimiento
     Callback<void(uint32_t)> _releaseCb;    /// Callback para notificar eventos de liberación
+    Callback<void()> 		 _releaseCb2;   /// Callback para notificar eventos de liberación
     RtosTimer* _tick_filt;
     RtosTimer* _tick_hold;
     bool _hold_running;						/// flag para indicar si el timer hold está en curso
