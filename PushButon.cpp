@@ -81,7 +81,10 @@ PushButton::~PushButton() {
 
 //------------------------------------------------------------------------------------
 void PushButton::enablePressEvents(Callback<void(uint32_t)>pressCb){
-	MBED_ASSERT(pressCb);
+	if(!pressCb){
+		disablePressEvents();
+		return;
+	}
 	_pressCb = pressCb;
 	enableRiseFallCallbacks();
 }
@@ -89,7 +92,10 @@ void PushButton::enablePressEvents(Callback<void(uint32_t)>pressCb){
 
 //------------------------------------------------------------------------------------
 void PushButton::enablePressEvents(Callback<void()>pressCb){
-	MBED_ASSERT(pressCb);
+	if(!pressCb){
+		disablePressEvents();
+		return;
+	}
 	_pressCb2 = pressCb;
 	enableRiseFallCallbacks();
 }
@@ -97,7 +103,10 @@ void PushButton::enablePressEvents(Callback<void()>pressCb){
 
 //------------------------------------------------------------------------------------
 void PushButton::enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t millis){
-	MBED_ASSERT(holdCb && millis);
+	if(!holdCb || millis == 0){
+		disableHoldEvents();
+		return;
+	}
 	_holdCb = holdCb;
 	_hold_us = 1000 * millis;
 	enableRiseFallCallbacks();
@@ -106,7 +115,10 @@ void PushButton::enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t milli
 
 //------------------------------------------------------------------------------------
 void PushButton::enableHoldEvents(Callback<void()>holdCb, uint32_t millis){
-	MBED_ASSERT(holdCb && millis);
+	if(!holdCb || millis == 0){
+		disableHoldEvents();
+		return;
+	}
 	_holdCb2 = holdCb;
 	_hold_us = 1000 * millis;
 	enableRiseFallCallbacks();
@@ -115,7 +127,10 @@ void PushButton::enableHoldEvents(Callback<void()>holdCb, uint32_t millis){
 
 //------------------------------------------------------------------------------------
 void PushButton::enableReleaseEvents(Callback<void(uint32_t)>releaseCb){
-	MBED_ASSERT(releaseCb);
+	if(!releaseCb){
+		disableReleaseEvents();
+		return;
+	}
 	_releaseCb = releaseCb;
 	enableRiseFallCallbacks();
 }
@@ -123,7 +138,10 @@ void PushButton::enableReleaseEvents(Callback<void(uint32_t)>releaseCb){
 
 //------------------------------------------------------------------------------------
 void PushButton::enableReleaseEvents(Callback<void()>releaseCb){
-	MBED_ASSERT(releaseCb);
+	if(!releaseCb){
+		disableReleaseEvents();
+		return;
+	}
 	_releaseCb2 = releaseCb;
 	enableRiseFallCallbacks();
 }
