@@ -25,10 +25,10 @@ static const char* _MODULE_ = "[PushBtn].......";
 
 
 //------------------------------------------------------------------------------------
-PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg) : _defdbg(defdbg) {
+PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg) : _defdbg(defdbg) {
     // Crea objeto
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando PushButton en pin %d", btn);
-	_iin = new InterruptIn(btn);
+	_iin = new InterruptIn((PinName)btn);
 	MBED_ASSERT(_iin);
 	_iin->mode(mode);
 	_iin->rise(NULL);

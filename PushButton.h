@@ -30,7 +30,7 @@ class PushButton {
     };
     
 	/** Constructor y Destructor por defecto */
-    PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg = false);
+    PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg = false);
     ~PushButton();
   
   
