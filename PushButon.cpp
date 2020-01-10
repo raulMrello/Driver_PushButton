@@ -19,23 +19,16 @@ static const char* _MODULE_ = "[PushBtn].......";
 #define _EXPR_	(_defdbg && !IS_ISR())
 
 
-
-
-//------------------------------------------------------------------------------------
-static void nullCallback(uint32_t id){
-}
-
-
 //------------------------------------------------------------------------------------
 //-- PUBLIC METHODS IMPLEMENTATION ---------------------------------------------------
 //------------------------------------------------------------------------------------
 
 
 //------------------------------------------------------------------------------------
-PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg) : _defdbg(defdbg) {
+PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg) : _defdbg(defdbg) {
     // Crea objeto
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando PushButton en pin %d", btn);
-	_iin = new InterruptIn(btn);
+	_iin = new InterruptIn((PinName)btn);
 	MBED_ASSERT(_iin);
 	_iin->mode(mode);
 	_iin->rise(NULL);
@@ -48,9 +41,12 @@ PushButton::PushButton(PinName btn, uint32_t id, LogicLevel level, PinMode mode,
     
     // Desactiva las callbacks de notificación
     DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
-    _pressCb = callback(&nullCallback);
-    _holdCb = callback(&nullCallback);
-    _releaseCb = callback(&nullCallback);
+    _pressCb = (Callback<void(uint32_t)>) NULL;
+    _holdCb = (Callback<void(uint32_t)>) NULL;
+    _releaseCb = (Callback<void(uint32_t)>) NULL;
+    _pressCb2 = (Callback<void()>) NULL;
+    _holdCb2 = (Callback<void()>) NULL;
+    _releaseCb2 = (Callback<void()>) NULL;
 
 
     // Crea temporizadores
@@ -82,17 +78,35 @@ PushButton::~PushButton() {
 	delete(_th);
 }
 
+
 //------------------------------------------------------------------------------------
 void PushButton::enablePressEvents(Callback<void(uint32_t)>pressCb){
-	MBED_ASSERT(pressCb);
+	if(!pressCb){
+		disablePressEvents();
+		return;
+	}
 	_pressCb = pressCb;
 	enableRiseFallCallbacks();
 }
 
 
 //------------------------------------------------------------------------------------
+void PushButton::enablePressEvents(Callback<void()>pressCb){
+	if(!pressCb){
+		disablePressEvents();
+		return;
+	}
+	_pressCb2 = pressCb;
+	enableRiseFallCallbacks();
+}
+
+
+//------------------------------------------------------------------------------------
 void PushButton::enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t millis){
-	MBED_ASSERT(holdCb && millis);
+	if(!holdCb || millis == 0){
+		disableHoldEvents();
+		return;
+	}
 	_holdCb = holdCb;
 	_hold_us = 1000 * millis;
 	enableRiseFallCallbacks();
@@ -100,16 +114,43 @@ void PushButton::enableHoldEvents(Callback<void(uint32_t)>holdCb, uint32_t milli
 
 
 //------------------------------------------------------------------------------------
+void PushButton::enableHoldEvents(Callback<void()>holdCb, uint32_t millis){
+	if(!holdCb || millis == 0){
+		disableHoldEvents();
+		return;
+	}
+	_holdCb2 = holdCb;
+	_hold_us = 1000 * millis;
+	enableRiseFallCallbacks();
+}
+
+
+//------------------------------------------------------------------------------------
 void PushButton::enableReleaseEvents(Callback<void(uint32_t)>releaseCb){
-	MBED_ASSERT(releaseCb);
+	if(!releaseCb){
+		disableReleaseEvents();
+		return;
+	}
 	_releaseCb = releaseCb;
 	enableRiseFallCallbacks();
 }
 
 
 //------------------------------------------------------------------------------------
+void PushButton::enableReleaseEvents(Callback<void()>releaseCb){
+	if(!releaseCb){
+		disableReleaseEvents();
+		return;
+	}
+	_releaseCb2 = releaseCb;
+	enableRiseFallCallbacks();
+}
+
+
+//------------------------------------------------------------------------------------
 void PushButton::disablePressEvents(){
-    _pressCb = callback(&nullCallback);
+    _pressCb = (Callback<void(uint32_t)>) NULL;
+    _pressCb2 = (Callback<void()>) NULL;
 }
 
 
@@ -119,14 +160,16 @@ void PushButton::disableHoldEvents(){
 		_tick_hold->stop();
 	}
 	_hold_running = false;
-    _holdCb = callback(&nullCallback);
+    _holdCb = (Callback<void(uint32_t)>) NULL;
+    _holdCb2 = (Callback<void()>) NULL;
     _hold_us = 0;
 }
 
 
 //------------------------------------------------------------------------------------
 void PushButton::disableReleaseEvents(){
-    _releaseCb = callback(&nullCallback);
+    _releaseCb = (Callback<void(uint32_t)>) NULL;
+    _releaseCb2 = (Callback<void()>) NULL;
 }
 
 
@@ -180,6 +223,19 @@ void PushButton::isrFallCallback(){
 	_th->signal_set(EvFall);
 }
 
+
+//------------------------------------------------------------------------------------
+void PushButton::holdTickCallback(){
+	DEBUG_TRACE_D(_EXPR_, _MODULE_, "EV_HOLD");
+	if(_holdCb){
+		_holdCb.call(_id);
+	}
+	if(_holdCb2){
+		_holdCb2.call();
+	}
+}
+
+
 //------------------------------------------------------------------------------------
 void PushButton::gpioFilterCallback(){
 	// leo valor del pin
@@ -199,7 +255,12 @@ void PushButton::gpioFilterCallback(){
 			_tick_hold->stop();
 			_hold_running = false;
 		}
-		_releaseCb.call(_id);
+		if(_releaseCb){
+			_releaseCb.call(_id);
+		}
+		if(_releaseCb2){
+			_releaseCb2.call();
+		}
 		enableRiseFallCallbacks();
 		return;
 	}
@@ -216,7 +277,12 @@ void PushButton::gpioFilterCallback(){
         	_tick_hold->start(_hold_us/1000);
         	_hold_running = true;
         }
-        _pressCb.call(_id);
+        if(_pressCb){
+        	_pressCb.call(_id);
+        }
+        if(_pressCb2){
+        	_pressCb2.call();
+        }
         enableRiseFallCallbacks();
         return;
     }
@@ -228,13 +294,6 @@ void PushButton::gpioFilterCallback(){
 		_hold_running = false;
 	}
     enableRiseFallCallbacks();
-}
-
-
-//------------------------------------------------------------------------------------
-void PushButton::holdTickCallback(){
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "EV_HOLD");
-    _holdCb.call(_id);
 }
 
 

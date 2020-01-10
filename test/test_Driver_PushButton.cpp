@@ -13,24 +13,24 @@
 #include "mbed.h"
 #include "AppConfig.h"
 
-#if ESP_PLATFORM == 1 || (__MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_PushButton))
+#if ESP_PLATFORM == 1 || (__MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_PushButton))
 
 /** Requerido para test unitarios ESP-MDF */
 #if ESP_PLATFORM == 1
 #include "unity.h"
 #include "Heap.h"
 void (*syslog_print)(const char*level, const char* tag, const char* format, ...) = NULL;
-#define PinName_LOCAL			GPIO_NUM_21
+#define PinName32_LOCAL			GPIO_NUM_21
 
 /** Requerido para test unitarios STM32 */
-#elif __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_PushButton)
+#elif __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_PushButton)
 #include "unity.h"
 #include "Heap.h"
 #include "unity_test_runner.h"
 /// Configuración MBED_API_uSerial
 
 // Configuración btnzer
-#define PinName_LOCAL			PC_1//PD_8
+#define PinName32_LOCAL			PC_1//PD_8
 #endif
 
 #include "PushButton.h"
@@ -65,6 +65,16 @@ static void onHold(uint32_t uid){
 static void onReleased(uint32_t uid){
 	release_count++;
 }
+static void onPressed2(){
+	press_count++;
+}
+static void onHold2(){
+	hold_count++;
+
+}
+static void onReleased2(){
+	release_count++;
+}
 
 //------------------------------------------------------------------------------------
 //-- TEST FUNCTIONS ------------------------------------------------------------------
@@ -75,20 +85,28 @@ static void onReleased(uint32_t uid){
 static void test_btn_new_local(){
 	TEST_ASSERT_NULL(btn);
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando btn en cpu local");
-	btn = new PushButton(PinName_LOCAL, 0, PushButton::PressIsLowLevel, PullNone, true);
+	btn = new PushButton(PinName32_LOCAL, 0, PushButton::PressIsLowLevel, PullNone, true);
 	TEST_ASSERT_NOT_NULL(btn);
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "PushButton OK!");
 }
 
 //------------------------------------------------------------------------------------
-static void test_btn_enable_callbacks(){
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Instala button callbacks");
+static void test_btn_enable_callbacks_uid(){
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Instala button callbacks UID");
 
 	btn->enablePressEvents(callback(&onPressed));
 	btn->enableHoldEvents(callback(&onHold), 1000);
 	btn->enableReleaseEvents(callback(&onReleased));
 }
 
+//------------------------------------------------------------------------------------
+static void test_btn_enable_callbacks_void(){
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Instala button callbacks VOID");
+
+	btn->enablePressEvents(callback(&onPressed2));
+	btn->enableHoldEvents(callback(&onHold2), 1000);
+	btn->enableReleaseEvents(callback(&onReleased2));
+}
 
 //------------------------------------------------------------------------------------
 static void test_btn_api(){
@@ -145,8 +163,14 @@ TEST_CASE("Crea btn en CPU local", "[Driver_PushButton]") {
 
 
 //------------------------------------------------------------------------------------
-TEST_CASE("Instala callbacks", "[Driver_PushButton]") {
-	test_btn_enable_callbacks();
+TEST_CASE("Instala callbacks uid", "[Driver_PushButton]") {
+	test_btn_enable_callbacks_uid();
+}
+
+
+//------------------------------------------------------------------------------------
+TEST_CASE("Instala callbacks void", "[Driver_PushButton]") {
+	test_btn_enable_callbacks_void();
 }
 
 //------------------------------------------------------------------------------------
