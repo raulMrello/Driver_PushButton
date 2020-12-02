@@ -92,7 +92,7 @@ class PushButton {
     static const uint32_t EvRise 	= (1<<0);
     static const uint32_t EvFall 	= (1<<1);
 
-    static const uint32_t GlitchFilterTimeoutUs = 20000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
+    static const uint32_t GlitchFilterTimeoutUs = 500000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
     InterruptIn* _iin;						/// InterruptIn asociada
     LogicLevel _level;                      /// Nivel lógico
     Callback<void(uint32_t)> _pressCb;      /// Callback para notificar eventos de pulsación
