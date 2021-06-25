@@ -32,6 +32,7 @@ class PushButton {
     
 	/** Constructor y Destructor por defecto */
     PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, uint32_t filter_us = GlitchFilterTimeoutUs, bool defdbg = false);
+    PushButton(uint32_t id, LogicLevel level, uint32_t filter_us = GlitchFilterTimeoutUs, bool defdbg = false);
     ~PushButton();
   
   
@@ -85,6 +86,12 @@ class PushButton {
      *
      */
     void disableGlitchFilter() { _endis_gfilt = false; }
+
+    /*
+     * Setea el último valor leído
+     * */
+
+    void setValue(bool val){_pin_level = val;}
 
 
   private:
@@ -143,6 +150,8 @@ class PushButton {
      * Hilo de control
      */
     void _task();
+
+    uint32_t _pin_level;
   
 };
      

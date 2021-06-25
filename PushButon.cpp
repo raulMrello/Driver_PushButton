@@ -70,12 +70,59 @@ PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mod
 
 }
 
+PushButton::PushButton(uint32_t id, LogicLevel level, uint32_t filter_us, bool defdbg){
+	// Crea objeto
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando PushButton SIN control de pin con ID %d", id);
+	_iin = NULL;
+//	_iin = new InterruptIn((PinName)btn);
+//	MBED_ASSERT(_iin);
+//	_iin->mode(mode);
+//	_iin->rise(NULL);
+//	_iin->fall(NULL);
+	_level = level;
+	_id = id;
+	_hold_us = 0;
+	_hold_running = false;
+	_endis_gfilt = true;
+	_filter_timeout_us = filter_us;
+	_pin_level = 0;
+
+	// Desactiva las callbacks de notificación
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
+	_pressCb = (Callback<void(uint32_t)>) NULL;
+	_holdCb = (Callback<void(uint32_t)>) NULL;
+	_releaseCb = (Callback<void(uint32_t)>) NULL;
+	_pressCb2 = (Callback<void()>) NULL;
+	_holdCb2 = (Callback<void()>) NULL;
+	_releaseCb2 = (Callback<void()>) NULL;
+
+
+	// Crea temporizadores
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando tickers de tarea");
+	#if __MBED__==1
+	_tick_filt = new RtosTimer(callback(this, &PushButton::gpioFilterCallback), osTimerOnce);
+	MBED_ASSERT(_tick_filt);
+	_tick_hold = new RtosTimer(callback(this, &PushButton::holdTickCallback), osTimerPeriodic);
+	MBED_ASSERT(_tick_hold);
+	#elif ESP_PLATFORM==1
+	_tick_filt = new RtosTimer(callback(this, &PushButton::gpioFilterCallback), osTimerOnce, "BtnTmrFilt");
+	MBED_ASSERT(_tick_filt);
+	_tick_hold = new RtosTimer(callback(this, &PushButton::holdTickCallback), osTimerPeriodic, "BtnTmrHold");
+	MBED_ASSERT(_tick_hold);
+	#endif
+	sprintf(_th_name,"pushb_%x", (uint32_t)this);
+	_th = new Thread(osPriorityNormal, OS_STACK_SIZE, NULL, _th_name);
+	MBED_ASSERT(_th);
+	_th->start(callback(this, &PushButton::_task));
+}
+
 
 //------------------------------------------------------------------------------------
 PushButton::~PushButton() {
 	delete(_tick_filt);
 	delete(_tick_hold);
-	delete(_iin);
+	if(_iin)
+		delete(_iin);
 	delete(_th);
 }
 
@@ -211,16 +258,20 @@ void PushButton::_task(){
 
 //------------------------------------------------------------------------------------
 void PushButton::isrRiseCallback(){
-	_iin->rise(NULL);
-	_iin->fall(NULL);
+	if(_iin){
+		_iin->rise(NULL);
+		_iin->fall(NULL);
+	}
 	_th->signal_set(EvRise);
 }
 
 
 //------------------------------------------------------------------------------------
 void PushButton::isrFallCallback(){
-	_iin->rise(NULL);
-	_iin->fall(NULL);
+	if(_iin){
+		_iin->rise(NULL);
+		_iin->fall(NULL);
+	}
 	_th->signal_set(EvFall);
 }
 
@@ -240,12 +291,15 @@ void PushButton::holdTickCallback(){
 //------------------------------------------------------------------------------------
 void PushButton::gpioFilterCallback(){
 	// leo valor del pin
-    uint8_t pin_level = (uint8_t)_iin->read();
+    uint8_t pin_level = _pin_level;
+    if(_iin){
+    	pin_level = (uint8_t)_iin->read();
+    }
 
 	// En caso de glitch, descarto y vuelvo a habilitar interrupciones
 	if(_curr_value != pin_level){
 		DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_NOISE");
-		enableRiseFallCallbacks();
+		if(_iin)enableRiseFallCallbacks();
         return;
 	}
 
@@ -262,7 +316,7 @@ void PushButton::gpioFilterCallback(){
 		if(_releaseCb2){
 			_releaseCb2.call();
 		}
-		enableRiseFallCallbacks();
+		if(_iin)enableRiseFallCallbacks();
 		return;
 	}
 
@@ -284,7 +338,7 @@ void PushButton::gpioFilterCallback(){
         if(_pressCb2){
         	_pressCb2.call();
         }
-        enableRiseFallCallbacks();
+        if(_iin)enableRiseFallCallbacks();
         return;
     }
 
@@ -294,7 +348,7 @@ void PushButton::gpioFilterCallback(){
 		_tick_hold->stop();
 		_hold_running = false;
 	}
-    enableRiseFallCallbacks();
+    if(_iin)enableRiseFallCallbacks();
 }
 
 
