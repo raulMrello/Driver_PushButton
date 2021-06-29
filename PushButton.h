@@ -91,7 +91,7 @@ class PushButton {
      * Setea el último valor leído
      * */
 
-    void setValue(bool val){_pin_level = val;}
+    void setValue(bool val);
 
 
   private:
