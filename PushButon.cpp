@@ -70,7 +70,7 @@ PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mod
 
 }
 
-PushButton::PushButton(uint32_t id, LogicLevel level, uint32_t filter_us, bool defdbg){
+PushButton::PushButton(uint32_t id, LogicLevel level, uint32_t filter_us, bool defdbg) : _defdbg(defdbg){
 	// Crea objeto
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando PushButton SIN control de pin con ID %d", id);
 	_iin = NULL;
@@ -85,7 +85,10 @@ PushButton::PushButton(uint32_t id, LogicLevel level, uint32_t filter_us, bool d
 	_hold_running = false;
 	_endis_gfilt = true;
 	_filter_timeout_us = filter_us;
-	_pin_level = 0;
+	if(_level == LogicLevel::PressIsLowLevel)
+		_pin_level = 1;
+	else
+		_pin_level = 0;
 
 	// Desactiva las callbacks de notificaci�n
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
