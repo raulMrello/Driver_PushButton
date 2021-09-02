@@ -25,7 +25,7 @@ static const char* _MODULE_ = "[PushBtn].......";
 
 
 //------------------------------------------------------------------------------------
-PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, bool defdbg) : _defdbg(defdbg) {
+PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mode, uint32_t filter_us, bool defdbg) : _defdbg(defdbg) {
     // Crea objeto
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando PushButton en pin %d", btn);
 	_iin = new InterruptIn((PinName)btn);
@@ -38,6 +38,7 @@ PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mod
     _hold_us = 0;
     _hold_running = false;
     _endis_gfilt = true;
+    _filter_timeout_us = filter_us;
     
     // Desactiva las callbacks de notificación
     DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
@@ -187,7 +188,7 @@ void PushButton::_task(){
 		if(oe.status == osEventSignal &&  (oe.value.signals & EvRise) != 0){
 			_curr_value = 1;
 			if(_endis_gfilt){
-				_tick_filt->start(GlitchFilterTimeoutUs/1000);
+				_tick_filt->start(_filter_timeout_us/1000);
 			}
 			else{
 				gpioFilterCallback();
@@ -197,7 +198,7 @@ void PushButton::_task(){
 		if(oe.status == osEventSignal &&  (oe.value.signals & EvFall) != 0){
 			_curr_value = 0;
 			if(_endis_gfilt){
-				_tick_filt->start(GlitchFilterTimeoutUs/1000);
+				_tick_filt->start(_filter_timeout_us/1000);
 			}
 			else{
 				gpioFilterCallback();
