@@ -12,8 +12,8 @@
 //------------------------------------------------------------------------------------
 //--- PRIVATE TYPES ------------------------------------------------------------------
 //------------------------------------------------------------------------------------
-/** Macro para imprimir trazas de depuración, siempre que se haya configurado un objeto
- *	Logger válido (ej: _debug)
+/** Macro para imprimir trazas de depuraciï¿½n, siempre que se haya configurado un objeto
+ *	Logger vï¿½lido (ej: _debug)
  */
 static const char* _MODULE_ = "[PushBtn].......";
 #define _EXPR_	(_defdbg && !IS_ISR())
@@ -40,7 +40,7 @@ PushButton::PushButton(PinName32 btn, uint32_t id, LogicLevel level, PinMode mod
     _endis_gfilt = true;
     _filter_timeout_us = filter_us;
     
-    // Desactiva las callbacks de notificación
+    // Desactiva las callbacks de notificaciï¿½n
     DEBUG_TRACE_I(_EXPR_, _MODULE_, "Desactivando callbacks");
     _pressCb = (Callback<void(uint32_t)>) NULL;
     _holdCb = (Callback<void(uint32_t)>) NULL;
@@ -269,7 +269,7 @@ void PushButton::gpioFilterCallback(){
     // En caso de evento PRESS
     if((pin_level == 1 && _level == PressIsHighLevel) || (pin_level == 0 && _level == PressIsLowLevel)){
     	DEBUG_TRACE_D(_EXPR_, _MODULE_, "EV_PRESS");
-    	// si el timming para eventos hold está configurado, primero lo detiene y luego lo inicia
+    	// si el timming para eventos hold estï¿½ configurado, primero lo detiene y luego lo inicia
 		if(_hold_running){
 			_tick_hold->stop();
 			_hold_running = false;
@@ -288,7 +288,7 @@ void PushButton::gpioFilterCallback(){
         return;
     }
 
-    // No debería llegar a este punto nunca, pero por si acaso, reasigna isr's
+    // No deberï¿½a llegar a este punto nunca, pero por si acaso, reasigna isr's
     DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_LEVEL");
 	if(_hold_running){
 		_tick_hold->stop();
@@ -305,8 +305,8 @@ void PushButton::enableRiseFallCallbacks(){
 		_iin->fall(callback(this, &PushButton::isrFallCallback));
 	}
 	else{
-		_iin->rise(callback(this, &PushButton::isrRiseCallback));
 		_iin->fall(NULL);
+		_iin->rise(callback(this, &PushButton::isrRiseCallback));
 	}
 }
 
